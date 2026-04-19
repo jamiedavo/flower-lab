@@ -263,7 +263,8 @@ export default function App() {
           oneLineLabels={false}
           hideCopyButton
         />
-      </div>
+            </div>
     )}
   </>
-);
+  );
+}
