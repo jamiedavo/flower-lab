@@ -147,6 +147,10 @@ export default function App() {
     img.src = url;
   };
 
+  const mobileDrawerHeight = '36dvh';
+  const mobileTopInset = 'max(16px, env(safe-area-inset-top))';
+  const mobileBottomInset = 'max(12px, env(safe-area-inset-bottom))';
+
   return (
     <>
       {!isMobile && <Leva collapsed={false} />}
@@ -159,27 +163,36 @@ export default function App() {
           height: '100dvh',
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
           backgroundColor: config.Background,
           overflow: 'hidden',
           boxSizing: 'border-box',
-          padding: isMobile ? '12px' : '24px',
+          paddingTop: isMobile ? `calc(${mobileTopInset} + 56px)` : '24px',
+          paddingRight: isMobile ? '12px' : '24px',
+          paddingLeft: isMobile ? '12px' : '24px',
+          paddingBottom: isMobile
+            ? showControls
+              ? `calc(${mobileDrawerHeight} + 16px)`
+              : `calc(${mobileBottomInset} + 64px)`
+            : '24px',
         }}
       >
         <button
           onClick={exportPng}
           style={{
             position: 'fixed',
-            top: 'max(12px, env(safe-area-inset-top))',
+            top: mobileTopInset,
             right: '12px',
             padding: isMobile ? '10px 14px' : '10px 20px',
             cursor: 'pointer',
-            zIndex: 300,
+            zIndex: 500,
             background: '#fff',
+            color: '#111',
             border: 'none',
             borderRadius: '999px',
             fontWeight: 'bold',
-            fontSize: isMobile ? '13px' : '15px',
+            fontSize: isMobile ? '12px' : '15px',
+            lineHeight: 1,
             boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
           }}
         >
@@ -191,17 +204,19 @@ export default function App() {
             onClick={() => setShowControls((v) => !v)}
             style={{
               position: 'fixed',
-              bottom: 'max(12px, env(safe-area-inset-bottom))',
+              bottom: mobileBottomInset,
               left: '50%',
               transform: 'translateX(-50%)',
               padding: '12px 18px',
               cursor: 'pointer',
-              zIndex: 300,
+              zIndex: 500,
               background: '#fff',
+              color: '#111',
               border: 'none',
               borderRadius: '999px',
               fontWeight: 'bold',
               fontSize: '14px',
+              lineHeight: 1,
               boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
             }}
           >
@@ -213,10 +228,15 @@ export default function App() {
           ref={svgRef}
           viewBox="0 0 500 500"
           style={{
-            width: isMobile ? '92vw' : '90vmin',
-            height: isMobile ? '92vw' : '90vmin',
+            width: isMobile ? '94vw' : '90vmin',
+            height: 'auto',
+            aspectRatio: '1 / 1',
             maxWidth: '100%',
-            maxHeight: isMobile ? '92dvh' : '90vmin',
+            maxHeight: isMobile
+              ? showControls
+                ? `calc(100dvh - ${mobileDrawerHeight} - 92px)`
+                : 'calc(100dvh - 110px)'
+              : '90vmin',
             display: 'block',
             flexShrink: 1,
           }}
@@ -236,7 +256,7 @@ export default function App() {
             left: 0,
             right: 0,
             bottom: 0,
-            height: '42dvh',
+            height: mobileDrawerHeight,
             background: 'rgba(20,20,20,0.98)',
             zIndex: 400,
             borderTopLeftRadius: '18px',
