@@ -65,10 +65,6 @@ export default function App() {
   }, [isMobile]);
 
   const config = useControls({
-    // ...
-  });
-
-  const config = useControls({
     Background: '#111111',
     'Layer 1 (Bottom)': folder({
       l1_count: { label: 'count', value: 12, min: 1, max: 100, step: 1 },
@@ -119,7 +115,8 @@ export default function App() {
 
   const exportPng = () => {
     const svg = svgRef.current;
-    const [showControls, setShowControls] = useState(false);
+    if (!svg) return;
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const data = new XMLSerializer().serializeToString(svg);
@@ -130,9 +127,12 @@ export default function App() {
     img.onload = () => {
       canvas.width = 1000;
       canvas.height = 1000;
-      ctx.fillStyle = config.Background;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, 1000, 1000);
+
+      if (ctx) {
+        ctx.fillStyle = config.Background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, 1000, 1000);
+      }
 
       const pngUrl = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
@@ -148,123 +148,122 @@ export default function App() {
   };
 
   return (
-  <>
-    {!isMobile && <Leva collapsed={false} />}
+    <>
+      {!isMobile && <Leva collapsed={false} />}
 
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100vw',
-        height: '100dvh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: config.Background,
-        overflow: 'hidden',
-        boxSizing: 'border-box',
-        padding: isMobile ? '12px' : '24px',
-      }}
-    >
-      <button
-        onClick={exportPng}
+      <div
         style={{
           position: 'fixed',
-          top: 'max(12px, env(safe-area-inset-top))',
-          right: '12px',
-          padding: isMobile ? '10px 14px' : '10px 20px',
-          cursor: 'pointer',
-          zIndex: 300,
-          background: '#fff',
-          border: 'none',
-          borderRadius: '999px',
-          fontWeight: 'bold',
-          fontSize: isMobile ? '13px' : '15px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          inset: 0,
+          width: '100vw',
+          height: '100dvh',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: config.Background,
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+          padding: isMobile ? '12px' : '24px',
         }}
       >
-        Export PNG
-      </button>
-
-      {isMobile && (
         <button
-          onClick={() => setShowControls((v) => !v)}
+          onClick={exportPng}
           style={{
             position: 'fixed',
-            bottom: 'max(12px, env(safe-area-inset-bottom))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '12px 18px',
+            top: 'max(12px, env(safe-area-inset-top))',
+            right: '12px',
+            padding: isMobile ? '10px 14px' : '10px 20px',
             cursor: 'pointer',
             zIndex: 300,
             background: '#fff',
             border: 'none',
             borderRadius: '999px',
             fontWeight: 'bold',
-            fontSize: '14px',
+            fontSize: isMobile ? '13px' : '15px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
           }}
         >
-          {showControls ? 'Hide Controls' : 'Show Controls'}
+          Export PNG
         </button>
-      )}
 
-      <svg
-        ref={svgRef}
-        viewBox="0 0 500 500"
-        style={{
-          width: isMobile ? '92vw' : '90vmin',
-          height: isMobile ? '92vw' : '90vmin',
-          maxWidth: '100%',
-          maxHeight: isMobile ? '92dvh' : '90vmin',
-          display: 'block',
-          flexShrink: 1,
-        }}
-      >
-        <g transform="translate(250, 250)">
-          <FlowerLayer settings={getLayerSettings('l1')} />
-          <FlowerLayer settings={getLayerSettings('l2')} />
-          <FlowerLayer settings={getLayerSettings('l3')} />
-        </g>
-      </svg>
-    </div>
+        {isMobile && (
+          <button
+            onClick={() => setShowControls((v) => !v)}
+            style={{
+              position: 'fixed',
+              bottom: 'max(12px, env(safe-area-inset-bottom))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              padding: '12px 18px',
+              cursor: 'pointer',
+              zIndex: 300,
+              background: '#fff',
+              border: 'none',
+              borderRadius: '999px',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            }}
+          >
+            {showControls ? 'Hide Controls' : 'Show Controls'}
+          </button>
+        )}
 
-    {isMobile && showControls && (
-      <div
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: '42dvh',
-          background: 'rgba(20,20,20,0.98)',
-          zIndex: 400,
-          borderTopLeftRadius: '18px',
-          borderTopRightRadius: '18px',
-          overflowY: 'auto',
-          boxShadow: '0 -12px 40px rgba(0,0,0,0.45)',
-          paddingTop: '10px',
-        }}
-      >
+        <svg
+          ref={svgRef}
+          viewBox="0 0 500 500"
+          style={{
+            width: isMobile ? '92vw' : '90vmin',
+            height: isMobile ? '92vw' : '90vmin',
+            maxWidth: '100%',
+            maxHeight: isMobile ? '92dvh' : '90vmin',
+            display: 'block',
+            flexShrink: 1,
+          }}
+        >
+          <g transform="translate(250, 250)">
+            <FlowerLayer settings={getLayerSettings('l1')} />
+            <FlowerLayer settings={getLayerSettings('l2')} />
+            <FlowerLayer settings={getLayerSettings('l3')} />
+          </g>
+        </svg>
+      </div>
+
+      {isMobile && showControls && (
         <div
           style={{
-            width: '42px',
-            height: '5px',
-            borderRadius: '999px',
-            background: 'rgba(255,255,255,0.25)',
-            margin: '0 auto 10px',
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: '42dvh',
+            background: 'rgba(20,20,20,0.98)',
+            zIndex: 400,
+            borderTopLeftRadius: '18px',
+            borderTopRightRadius: '18px',
+            overflowY: 'auto',
+            boxShadow: '0 -12px 40px rgba(0,0,0,0.45)',
+            paddingTop: '10px',
           }}
-        />
-        <Leva
-          collapsed={false}
-          fill
-          flat
-          titleBar={false}
-          oneLineLabels={false}
-          hideCopyButton
-        />
-            </div>
-    )}
-  </>
+        >
+          <div
+            style={{
+              width: '42px',
+              height: '5px',
+              borderRadius: '999px',
+              background: 'rgba(255,255,255,0.25)',
+              margin: '0 auto 10px',
+            }}
+          />
+          <Leva
+            collapsed={false}
+            fill
+            flat
+            oneLineLabels={false}
+            hideCopyButton
+          />
+        </div>
+      )}
+    </>
   );
 }
