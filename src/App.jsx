@@ -42,6 +42,7 @@ const FlowerLayer = ({ settings }) => {
 
 export default function App() {
   const svgRef = useRef(null);
+  const [showControls, setShowControls] = useState(false);
 
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -54,6 +55,18 @@ export default function App() {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setShowControls(true);
+    } else {
+      setShowControls(false);
+    }
+  }, [isMobile]);
+
+  const config = useControls({
+    // ...
+  });
 
   const config = useControls({
     Background: '#111111',
@@ -106,6 +119,7 @@ export default function App() {
 
   const exportPng = () => {
     const svg = svgRef.current;
+    const [showControls, setShowControls] = useState(false);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const data = new XMLSerializer().serializeToString(svg);
@@ -134,67 +148,122 @@ export default function App() {
   };
 
   return (
-    <>
-      <Leva collapsed={isMobile} />
+  <>
+    {!isMobile && <Leva collapsed={false} />}
 
-      <div
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100dvh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: config.Background,
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        padding: isMobile ? '12px' : '24px',
+      }}
+    >
+      <button
+        onClick={exportPng}
         style={{
           position: 'fixed',
-          inset: 0,
-          width: '100vw',
-          height: '100dvh',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: config.Background,
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-          paddingTop: isMobile ? '72px' : '24px',
-          paddingBottom: isMobile ? '88px' : '24px',
-          paddingLeft: isMobile ? '12px' : '24px',
-          paddingRight: isMobile ? '12px' : '24px',
+          top: 'max(12px, env(safe-area-inset-top))',
+          right: '12px',
+          padding: isMobile ? '10px 14px' : '10px 20px',
+          cursor: 'pointer',
+          zIndex: 300,
+          background: '#fff',
+          border: 'none',
+          borderRadius: '999px',
+          fontWeight: 'bold',
+          fontSize: isMobile ? '13px' : '15px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
         }}
       >
+        Export PNG
+      </button>
+
+      {isMobile && (
         <button
-          onClick={exportPng}
+          onClick={() => setShowControls((v) => !v)}
           style={{
             position: 'fixed',
-            bottom: 'max(16px, env(safe-area-inset-bottom))',
+            bottom: 'max(12px, env(safe-area-inset-bottom))',
             left: '50%',
             transform: 'translateX(-50%)',
-            padding: isMobile ? '12px 18px' : '10px 20px',
+            padding: '12px 18px',
             cursor: 'pointer',
-            zIndex: 200,
+            zIndex: 300,
             background: '#fff',
             border: 'none',
             borderRadius: '999px',
             fontWeight: 'bold',
-            fontSize: isMobile ? '14px' : '15px',
+            fontSize: '14px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
           }}
         >
-          Export PNG
+          {showControls ? 'Hide Controls' : 'Show Controls'}
         </button>
+      )}
 
-        <svg
-          ref={svgRef}
-          viewBox="0 0 500 500"
+      <svg
+        ref={svgRef}
+        viewBox="0 0 500 500"
+        style={{
+          width: isMobile ? '92vw' : '90vmin',
+          height: isMobile ? '92vw' : '90vmin',
+          maxWidth: '100%',
+          maxHeight: isMobile ? '92dvh' : '90vmin',
+          display: 'block',
+          flexShrink: 1,
+        }}
+      >
+        <g transform="translate(250, 250)">
+          <FlowerLayer settings={getLayerSettings('l1')} />
+          <FlowerLayer settings={getLayerSettings('l2')} />
+          <FlowerLayer settings={getLayerSettings('l3')} />
+        </g>
+      </svg>
+    </div>
+
+    {isMobile && showControls && (
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: '42dvh',
+          background: 'rgba(20,20,20,0.98)',
+          zIndex: 400,
+          borderTopLeftRadius: '18px',
+          borderTopRightRadius: '18px',
+          overflowY: 'auto',
+          boxShadow: '0 -12px 40px rgba(0,0,0,0.45)',
+          paddingTop: '10px',
+        }}
+      >
+        <div
           style={{
-            width: isMobile ? '92vw' : '90vmin',
-            height: isMobile ? '92vw' : '90vmin',
-            maxWidth: '100%',
-            maxHeight: isMobile ? 'calc(100dvh - 170px)' : '90vmin',
-            display: 'block',
-            flexShrink: 1,
+            width: '42px',
+            height: '5px',
+            borderRadius: '999px',
+            background: 'rgba(255,255,255,0.25)',
+            margin: '0 auto 10px',
           }}
-        >
-          <g transform="translate(250, 250)">
-            <FlowerLayer settings={getLayerSettings('l1')} />
-            <FlowerLayer settings={getLayerSettings('l2')} />
-            <FlowerLayer settings={getLayerSettings('l3')} />
-          </g>
-        </svg>
+        />
+        <Leva
+          collapsed={false}
+          fill
+          flat
+          titleBar={false}
+          oneLineLabels={false}
+          hideCopyButton
+        />
       </div>
-    </>
-  );
-}
+    )}
+  </>
+);
