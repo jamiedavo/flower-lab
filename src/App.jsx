@@ -1,29 +1,29 @@
-import React, { useRef } from 'react';
-import { useControls, folder } from 'leva';
+import React, { useEffect, useRef, useState } from 'react';
+import { Leva, useControls, folder } from 'leva';
 
 const Petal = ({ index, total, settings }) => {
   const { length, width, curvature, color, opacity, rotateOffset, taper } = settings;
   const rotation = (index / total) * 360 + rotateOffset;
 
   const pathData = `
-  M 0,0 
-  C ${-width},${-length * curvature} 
-    ${-taper},${-length} 
-    0,${-length} 
-  C ${taper},${-length} 
-    ${width},${-length * curvature} 
-    0,0 
-  Z
-`;
+    M 0,0 
+    C ${-width},${-length * curvature} 
+      ${-taper},${-length} 
+      0,${-length} 
+    C ${taper},${-length} 
+      ${width},${-length * curvature} 
+      0,0 
+    Z
+  `;
 
   return (
     <path
-  d={pathData}
-  fill={color}
-  fillOpacity={opacity}
-  transform={`rotate(${rotation})`}
-  style={{ mixBlendMode: 'screen' }} // Add this line
-/>
+      d={pathData}
+      fill={color}
+      fillOpacity={opacity}
+      transform={`rotate(${rotation})`}
+      style={{ mixBlendMode: 'screen' }}
+    />
   );
 };
 
@@ -43,7 +43,18 @@ const FlowerLayer = ({ settings }) => {
 export default function App() {
   const svgRef = useRef(null);
 
-  // We define 3 distinct state objects using Leva's folder structure
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 768;
+  });
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const config = useControls({
     Background: '#111111',
     'Layer 1 (Bottom)': folder({
@@ -81,7 +92,6 @@ export default function App() {
     }),
   });
 
-  // Helper to map the prefixed keys back to clean objects for the components
   const getLayerSettings = (prefix) => ({
     count: config[`${prefix}_count`],
     length: config[`${prefix}_length`],
@@ -96,11 +106,11 @@ export default function App() {
 
   const exportPng = () => {
     const svg = svgRef.current;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const data = (new XMLSerializer()).serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const data = new XMLSerializer().serializeToString(svg);
     const img = new Image();
-    const svgBlob = new Blob([data], { type: "image/svg+xml;charset=utf-8" });
+    const svgBlob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
 
     img.onload = () => {
@@ -109,43 +119,82 @@ export default function App() {
       ctx.fillStyle = config.Background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, 1000, 1000);
-      const pngUrl = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
+
+      const pngUrl = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
       downloadLink.href = pngUrl;
-      downloadLink.download = "strange-flower.png";
+      downloadLink.download = 'strange-flower.png';
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
       URL.revokeObjectURL(url);
     };
+
     img.src = url;
   };
 
   return (
-    <div style={{ 
-      width: '100vw', height: '100vh', 
-      display: 'flex', justifyContent: 'center', alignItems: 'center',
-      backgroundColor: config.Background,
-      overflow: 'hidden'
-    }}>
-      <button 
-        onClick={exportPng}
+    <>
+      <Leva collapsed={isMobile} />
+
+      <div
         style={{
-          position: 'absolute', bottom: '20px', left: '20px',
-          padding: '10px 20px', cursor: 'pointer', zIndex: 100,
-          background: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold'
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100dvh',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: config.Background,
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+          paddingTop: isMobile ? '72px' : '24px',
+          paddingBottom: isMobile ? '88px' : '24px',
+          paddingLeft: isMobile ? '12px' : '24px',
+          paddingRight: isMobile ? '12px' : '24px',
         }}
       >
-        Export PNG
-      </button>
+        <button
+          onClick={exportPng}
+          style={{
+            position: 'fixed',
+            bottom: 'max(16px, env(safe-area-inset-bottom))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: isMobile ? '12px 18px' : '10px 20px',
+            cursor: 'pointer',
+            zIndex: 200,
+            background: '#fff',
+            border: 'none',
+            borderRadius: '999px',
+            fontWeight: 'bold',
+            fontSize: isMobile ? '14px' : '15px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          }}
+        >
+          Export PNG
+        </button>
 
-      <svg ref={svgRef} viewBox="0 0 500 500" style={{ width: '90vmin', height: '90vmin' }}>
-        <g transform="translate(250, 250)">
-          <FlowerLayer settings={getLayerSettings('l1')} />
-          <FlowerLayer settings={getLayerSettings('l2')} />
-          <FlowerLayer settings={getLayerSettings('l3')} />
-        </g>
-      </svg>
-    </div>
+        <svg
+          ref={svgRef}
+          viewBox="0 0 500 500"
+          style={{
+            width: isMobile ? '92vw' : '90vmin',
+            height: isMobile ? '92vw' : '90vmin',
+            maxWidth: '100%',
+            maxHeight: isMobile ? 'calc(100dvh - 170px)' : '90vmin',
+            display: 'block',
+            flexShrink: 1,
+          }}
+        >
+          <g transform="translate(250, 250)">
+            <FlowerLayer settings={getLayerSettings('l1')} />
+            <FlowerLayer settings={getLayerSettings('l2')} />
+            <FlowerLayer settings={getLayerSettings('l3')} />
+          </g>
+        </svg>
+      </div>
+    </>
   );
 }
