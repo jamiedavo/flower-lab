@@ -1,289 +1,209 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Leva, useControls, folder } from 'leva';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { LevaPanel, useControls, useCreateStore, folder } from 'leva';
+import { DEFAULT_CONFIG, FIELD_SETTINGS, PRESETS, randomizeFlower } from './flowerConfig';
+import { createHistory, historyReducer } from './flowerHistory';
+import './App.css';
 
-const Petal = ({ index, total, settings }) => {
-  const { length, width, curvature, color, opacity, rotateOffset, taper } = settings;
-  const rotation = (index / total) * 360 + rotateOffset;
+const LAYERS = ['Layer 1 (Bottom)', 'Layer 2 (Middle)', 'Layer 3 (Top)'];
+const sameFlower = (a, b) => Object.keys(DEFAULT_CONFIG).every(key => a[key] === b[key]);
 
-  const pathData = `
-    M 0,0 
-    C ${-width},${-length * curvature} 
-      ${-taper},${-length} 
-      0,${-length} 
-    C ${taper},${-length} 
-      ${width},${-length * curvature} 
-      0,0 
-    Z
-  `;
+function readControls(get) {
+  return Object.fromEntries(Object.keys(DEFAULT_CONFIG).map(key => {
+    const path = key === 'Background' ? key : `${LAYERS[Number(key[1]) - 1]}.${key}`;
+    return [key, get(path)];
+  }));
+}
 
-  return (
-    <path
-      d={pathData}
-      fill={color}
-      fillOpacity={opacity}
-      transform={`rotate(${rotation})`}
-      style={{ mixBlendMode: 'screen' }}
-    />
-  );
-};
-
-const FlowerLayer = ({ settings }) => {
-  if (!settings) return null;
-
+function FlowerLayer({ settings }) {
+  const { count, length, width, curvature, color, opacity, rotateOffset, taper, coreSize } = settings;
+  const path = `M 0,0 C ${-width},${-length * curvature} ${-taper},${-length} 0,${-length}
+    C ${taper},${-length} ${width},${-length * curvature} 0,0 Z`;
   return (
     <g>
-      {[...Array(settings.count)].map((_, i) => (
-        <Petal key={i} index={i} total={settings.count} settings={settings} />
+      {Array.from({ length: count }, (_, index) => (
+        <path key={index} d={path} fill={color} fillOpacity={opacity}
+          transform={`rotate(${index / count * 360 + rotateOffset})`}
+          style={{ mixBlendMode: 'screen' }} />
       ))}
-      <circle r={settings.coreSize} fill={settings.color} fillOpacity={settings.opacity} />
+      <circle r={coreSize} fill={color} fillOpacity={opacity} />
     </g>
   );
-};
+}
 
 export default function App() {
   const svgRef = useRef(null);
+  const store = useCreateStore();
+  const [history, dispatch] = useReducer(historyReducer, DEFAULT_CONFIG, createHistory);
   const [showControls, setShowControls] = useState(false);
+  const [status, setStatus] = useState('');
+  const [exporting, setExporting] = useState(false);
 
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth <= 768;
-  });
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 768);
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+  const finishEdit = useCallback((_value, _path, context) => {
+    dispatch({ type: 'commit', value: readControls(context.get) });
   }, []);
 
-  useEffect(() => {
-    if (!isMobile) {
-      setShowControls(true);
-    } else {
-      setShowControls(false);
-    }
-  }, [isMobile]);
-
-  const config = useControls({
-    Background: '#111111',
-    'Layer 1 (Bottom)': folder({
-      l1_count: { label: 'count', value: 12, min: 1, max: 100, step: 1 },
-      l1_length: { label: 'length', value: 200, min: 10, max: 300 },
-      l1_width: { label: 'width', value: 40, min: 2, max: 150 },
-      l1_curvature: { label: 'curvature', value: 0.5, min: 0, max: 1 },
-      l1_taper: { label: 'taper', value: 10, min: -50, max: 50 },
-      l1_rotateOffset: { label: 'rotate', value: 0, min: 0, max: 360 },
-      l1_opacity: { label: 'opacity', value: 0.5, min: 0, max: 1 },
-      l1_coreSize: { label: 'coreSize', value: 15, min: 0, max: 100 },
-      l1_color: { label: 'color', value: '#ff0055' },
-    }),
-    'Layer 2 (Middle)': folder({
-      l2_count: { label: 'count', value: 20, min: 1, max: 100, step: 1 },
-      l2_length: { label: 'length', value: 150, min: 10, max: 300 },
-      l2_width: { label: 'width', value: 20, min: 2, max: 150 },
-      l2_curvature: { label: 'curvature', value: 0.8, min: 0, max: 1 },
-      l2_taper: { label: 'taper', value: -10, min: -50, max: 50 },
-      l2_rotateOffset: { label: 'rotate', value: 15, min: 0, max: 360 },
-      l2_opacity: { label: 'opacity', value: 0.6, min: 0, max: 1 },
-      l2_coreSize: { label: 'coreSize', value: 10, min: 0, max: 100 },
-      l2_color: { label: 'color', value: '#0099ff' },
-    }),
-    'Layer 3 (Top)': folder({
-      l3_count: { label: 'count', value: 5, min: 1, max: 100, step: 1 },
-      l3_length: { label: 'length', value: 100, min: 10, max: 300 },
-      l3_width: { label: 'width', value: 80, min: 2, max: 150 },
-      l3_curvature: { label: 'curvature', value: 0.2, min: 0, max: 1 },
-      l3_taper: { label: 'taper', value: 20, min: -50, max: 50 },
-      l3_rotateOffset: { label: 'rotate', value: 45, min: 0, max: 360 },
-      l3_opacity: { label: 'opacity', value: 0.8, min: 0, max: 1 },
-      l3_coreSize: { label: 'coreSize', value: 5, min: 0, max: 100 },
-      l3_color: { label: 'color', value: '#ffcc00' },
-    }),
-  });
-
-  const getLayerSettings = (prefix) => ({
-    count: config[`${prefix}_count`],
-    length: config[`${prefix}_length`],
-    width: config[`${prefix}_width`],
-    curvature: config[`${prefix}_curvature`],
-    taper: config[`${prefix}_taper`],
-    rotateOffset: config[`${prefix}_rotateOffset`],
-    opacity: config[`${prefix}_opacity`],
-    coreSize: config[`${prefix}_coreSize`],
-    color: config[`${prefix}_color`],
-  });
-
-  const exportPng = () => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const data = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    const svgBlob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-
-    img.onload = () => {
-      canvas.width = 1000;
-      canvas.height = 1000;
-
-      if (ctx) {
-        ctx.fillStyle = config.Background;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, 1000, 1000);
-      }
-
-      const pngUrl = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.href = pngUrl;
-      downloadLink.download = 'strange-flower.png';
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(url);
+  const [config, setConfig] = useControls(() => {
+    const schema = {
+      Background: { value: DEFAULT_CONFIG.Background, onEditEnd: finishEdit },
     };
+    LAYERS.forEach((name, index) => {
+      const prefix = `l${index + 1}_`;
+      const fields = Object.fromEntries([...Object.keys(FIELD_SETTINGS), 'color'].map(field => [
+        `${prefix}${field}`,
+        {
+          ...FIELD_SETTINGS[field],
+          label: field === 'rotateOffset' ? 'rotate' : field,
+          value: DEFAULT_CONFIG[`${prefix}${field}`],
+          onEditEnd: finishEdit,
+        },
+      ]));
+      schema[name] = folder(fields);
+    });
+    return schema;
+  }, { store }, [finishEdit]);
 
-    img.src = url;
+  const pendingEdit = !sameFlower(config, history.present);
+  const canUndo = pendingEdit || history.past.length > 0;
+  const canRedo = !pendingEdit && history.future.length > 0;
+  const preset = PRESETS.find(item => sameFlower(config, item.values));
+
+  // Commit a live input before an action, even if it has not blurred yet.
+  const applyFlower = (value, message) => {
+    dispatch({ type: 'commit', value: config });
+    dispatch({ type: 'commit', value });
+    setConfig(value);
+    setStatus(message);
   };
 
-  const mobileDrawerHeight = '36dvh';
-  const mobileTopInset = 'max(16px, env(safe-area-inset-top))';
-  const mobileBottomInset = 'max(12px, env(safe-area-inset-bottom))';
+  const undo = useCallback(() => {
+    const current = historyReducer(history, { type: 'commit', value: config });
+    const previous = historyReducer(current, { type: 'undo' });
+    dispatch({ type: 'commit', value: config });
+    dispatch({ type: 'undo' });
+    setConfig(previous.present);
+    setStatus('Change undone.');
+  }, [config, history, setConfig]);
+
+  const redo = useCallback(() => {
+    if (!canRedo) return;
+    const next = historyReducer(history, { type: 'redo' });
+    dispatch({ type: 'redo' });
+    setConfig(next.present);
+    setStatus('Change restored.');
+  }, [canRedo, history, setConfig]);
+
+  useEffect(() => {
+    const onKeyDown = event => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      // Keep native text editing shortcuts inside inputs.
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const key = event.key.toLowerCase();
+      if (key === 'z' && !event.shiftKey && canUndo) {
+        event.preventDefault();
+        undo();
+      } else if (((key === 'z' && event.shiftKey) || key === 'y') && canRedo) {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
+
+  const exportPng = async () => {
+    if (!svgRef.current || exporting) return;
+    setExporting(true);
+    let url;
+    try {
+      const svg = svgRef.current.cloneNode(true);
+      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svg.setAttribute('width', '1000');
+      svg.setAttribute('height', '1000');
+      const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
+      url = URL.createObjectURL(blob);
+      const image = new Image();
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('Could not create the PNG. Please try again.'));
+        image.src = url;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1000;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('PNG export is unavailable in this browser.');
+      context.fillStyle = config.Background;
+      context.fillRect(0, 0, 1000, 1000);
+      context.drawImage(image, 0, 0, 1000, 1000);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'strange-flower.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setStatus('PNG exported.');
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+      setExporting(false);
+    }
+  };
 
   return (
-    <>
-      {!isMobile && <Leva collapsed={false} />}
-
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100vw',
-          height: '100dvh',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          backgroundColor: config.Background,
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-          paddingTop: isMobile ? `calc(${mobileTopInset} + 56px)` : '24px',
-          paddingRight: isMobile ? '12px' : '24px',
-          paddingLeft: isMobile ? '12px' : '24px',
-          paddingBottom: isMobile
-            ? showControls
-              ? `calc(${mobileDrawerHeight} + 16px)`
-              : `calc(${mobileBottomInset} + 64px)`
-            : '24px',
-        }}
-      >
-        <button
-          onClick={exportPng}
-          style={{
-            position: 'fixed',
-            top: mobileTopInset,
-            right: '12px',
-            padding: isMobile ? '10px 14px' : '10px 20px',
-            cursor: 'pointer',
-            zIndex: 500,
-            background: '#fff',
-            color: '#111',
-            border: 'none',
-            borderRadius: '999px',
-            fontWeight: 'bold',
-            fontSize: isMobile ? '12px' : '15px',
-            lineHeight: 1,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-          }}
-        >
-          Export PNG
-        </button>
-
-        {isMobile && (
-          <button
-            onClick={() => setShowControls((v) => !v)}
-            style={{
-              position: 'fixed',
-              bottom: mobileBottomInset,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              padding: '12px 18px',
-              cursor: 'pointer',
-              zIndex: 500,
-              background: '#fff',
-              color: '#111',
-              border: 'none',
-              borderRadius: '999px',
-              fontWeight: 'bold',
-              fontSize: '14px',
-              lineHeight: 1,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-            }}
-          >
+    <div className="app-shell" style={{ backgroundColor: config.Background }}>
+      <header className="toolbar">
+        <h1>Flower Lab</h1>
+        <div className="toolbar-actions" aria-label="Flower actions">
+          <button type="button" onClick={undo} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
+          <button type="button" onClick={redo} disabled={!canRedo} title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+          <button type="button" className="export-button" onClick={exportPng} disabled={exporting}>
+            {exporting ? 'Exporting…' : 'Export PNG'}
+          </button>
+          <button type="button" className="controls-toggle" aria-expanded={showControls}
+            aria-controls="flower-controls" onClick={() => setShowControls(open => !open)}>
             {showControls ? 'Hide Controls' : 'Show Controls'}
           </button>
-        )}
-
-        <svg
-          ref={svgRef}
-          viewBox="0 0 500 500"
-          style={{
-            width: isMobile ? '94vw' : '90vmin',
-            height: 'auto',
-            aspectRatio: '1 / 1',
-            maxWidth: '100%',
-            maxHeight: isMobile
-              ? showControls
-                ? `calc(100dvh - ${mobileDrawerHeight} - 92px)`
-                : 'calc(100dvh - 110px)'
-              : '90vmin',
-            display: 'block',
-            flexShrink: 1,
-          }}
-        >
-          <g transform="translate(250, 250)">
-            <FlowerLayer settings={getLayerSettings('l1')} />
-            <FlowerLayer settings={getLayerSettings('l2')} />
-            <FlowerLayer settings={getLayerSettings('l3')} />
-          </g>
-        </svg>
-      </div>
-
-      {isMobile && showControls && (
-        <div
-          style={{
-            position: 'fixed',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: mobileDrawerHeight,
-            background: 'rgba(20,20,20,0.98)',
-            zIndex: 400,
-            borderTopLeftRadius: '18px',
-            borderTopRightRadius: '18px',
-            overflowY: 'auto',
-            boxShadow: '0 -12px 40px rgba(0,0,0,0.45)',
-            paddingTop: '10px',
-          }}
-        >
-          <div
-            style={{
-              width: '42px',
-              height: '5px',
-              borderRadius: '999px',
-              background: 'rgba(255,255,255,0.25)',
-              margin: '0 auto 10px',
-            }}
-          />
-          <Leva
-            collapsed={false}
-            fill
-            flat
-            oneLineLabels={false}
-            hideCopyButton
-          />
         </div>
-      )}
-    </>
+      </header>
+
+      <main className="workspace">
+        <div className="flower-stage">
+          <svg ref={svgRef} className="flower-svg" role="img" aria-label="Generated flower"
+            width="500" height="500" viewBox="0 0 500 500">
+            <title>Flower Lab creation</title>
+            <g transform="translate(250, 250)">
+              {LAYERS.map((name, index) => (
+                <FlowerLayer key={name} settings={Object.fromEntries(
+                  [...Object.keys(FIELD_SETTINGS), 'color'].map(field => [field, config[`l${index + 1}_${field}`]])
+                )} />
+              ))}
+            </g>
+          </svg>
+        </div>
+
+        <aside id="flower-controls" className={`editor-panel${showControls ? ' is-open' : ''}`} aria-label="Flower controls">
+          <div className="explore-controls">
+            <label htmlFor="flower-preset">Start with a preset</label>
+            <select id="flower-preset" value={preset?.id ?? ''} onChange={event => {
+              const selected = PRESETS.find(item => item.id === event.target.value);
+              if (selected) applyFlower(selected.values, `${selected.name} preset applied.`);
+            }}>
+              <option value="" disabled>Custom flower</option>
+              {PRESETS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+            <p>{preset?.description ?? 'Your own mix. Keep exploring, or undo to go back.'}</p>
+            <div className="randomize-actions">
+              <button type="button" onClick={() => applyFlower(randomizeFlower(config), 'New flower generated.')}>Randomize flower</button>
+              <button type="button" onClick={() => applyFlower(randomizeFlower(config, 'colors'), 'New colors applied.')}>Randomize colors</button>
+            </div>
+            <small>Balanced shapes and coordinated palettes. Undo any change.</small>
+          </div>
+          <div className="layer-controls">
+            <LevaPanel store={store} fill flat titleBar={false} hideCopyButton />
+          </div>
+        </aside>
+      </main>
+      <span className="sr-only" role="status">{status}</span>
+    </div>
   );
 }

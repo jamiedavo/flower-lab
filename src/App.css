@@ -1,184 +1,71 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#center {
+.app-shell {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  color: #eee;
 }
 
-#next-steps {
+.toolbar {
   display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
+  background: #18191d;
+  border-bottom: 1px solid #ffffff14;
 }
 
-#docs {
-  border-right: 1px solid var(--border);
+.toolbar h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.04em; }
+.toolbar-actions, .randomize-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-shell button, .app-shell select { font: inherit; }
+.app-shell button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #ffffff28;
+  border-radius: 8px;
+  background: #292b33;
+  color: #f5f5f7;
+  cursor: pointer;
+  font-size: 13px;
+}
+.app-shell button:hover:not(:disabled) { background: #3b3e49; }
+.app-shell button:disabled { opacity: .4; cursor: default; }
+.app-shell button:focus-visible, .app-shell select:focus-visible { outline: 2px solid #b8a5ff; outline-offset: 3px; }
+.app-shell .export-button { color: #17171b; background: #f2edff; border-color: #f2edff; font-weight: 600; }
+.app-shell .export-button:hover:not(:disabled) { background: #d8ccff; }
+.app-shell .controls-toggle { display: none; }
+.workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; padding: 20px; }
+.flower-stage { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.flower-svg { width: 100%; height: 100%; min-height: 0; display: block; }
+.editor-panel { min-height: 0; display: flex; flex-direction: column; border: 1px solid #ffffff1c; border-radius: 12px; background: #18191d; overflow: hidden; }
+.explore-controls { padding: 18px 16px; border-bottom: 1px solid #ffffff14; }
+.explore-controls label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+.explore-controls select { width: 100%; min-height: 42px; padding: 8px 10px; background: #292b33; color: #f5f5f7; border: 1px solid #ffffff28; border-radius: 6px; }
+.explore-controls p { margin: 10px 0 14px; color: #b9bac3; font-size: 12px; line-height: 1.5; min-height: 36px; }
+.explore-controls small { display: block; margin-top: 10px; color: #b9bac3; font-size: 11px; line-height: 1.5; }
+.randomize-actions { gap: 6px; }
+.randomize-actions button { flex: 1; padding: 8px; font-size: 12px; white-space: nowrap; }
+.layer-controls { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+@media (min-width: 769px) and (max-height: 600px) {
+  .editor-panel { display: block; overflow-y: auto; }
+  .layer-controls { overflow: visible; }
 }
 
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+@media (max-width: 768px) {
+  .toolbar { gap: 10px; padding: max(12px, env(safe-area-inset-top)) 12px 12px; }
+  .toolbar h1 { font-size: 16px; }
+  .toolbar-actions { gap: 6px; }
+  .app-shell button { min-height: 44px; padding: 8px 10px; font-size: 12px; }
+  .app-shell .controls-toggle { display: inline-block; }
+  .workspace { display: flex; flex-direction: column; gap: 12px; padding: 12px 12px max(12px, env(safe-area-inset-bottom)); }
+  .flower-stage { flex: 1; }
+  .editor-panel { display: none; flex: 0 1 52dvh; min-height: 170px; overflow-y: auto; }
+  .editor-panel.is-open { display: block; }
+  .explore-controls { padding: 14px; }
+  .explore-controls p { min-height: 0; }
+  .layer-controls { overflow: visible; }
 }

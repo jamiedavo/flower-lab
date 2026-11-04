@@ -1,16 +1,40 @@
-# React + Vite
+# Flower Lab
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React/Vite playground for layered, generative SVG flowers.
 
-Currently, two official plugins are available:
+## Develop
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Use Node 20.19+ or 22.12+ (Node 24 is verified).
 
-## React Compiler
+```sh
+npm ci
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```sh
+npm test       # 13 tests for presets, constrained randomization, and history
+npm run lint
+npm run build
+```
 
-## Expanding the ESLint configuration
+## Explore
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Choose Original, Sunburst, Moon Orchid, Sea Glass, or Ember as a starting point.
+- **Randomize flower** uses coordinated palettes and bounded, nested shapes. The
+  detailed layer controls still allow a wider range of manual edits.
+- **Randomize colors** changes only the background and three layer colors.
+- **Undo / Redo** restores the entire flower, including colors and all layer
+  settings. Each preset, randomization, slider drag, or focused input edit is one
+  step. Multiple Enter-confirmed changes in the same input form one step until
+  that input loses focus. History retains up to 100 steps for the current session.
+- Use Ctrl/Cmd+Z to undo and Ctrl/Cmd+Shift+Z (or Ctrl+Y) to redo. Text inputs keep
+  their native editing shortcuts while focused.
+- On mobile, **Show Controls / Hide Controls** toggles the editor below the flower.
+  Toolbar actions remain accessible while the editor scrolls.
+- **Export PNG** downloads a 1000×1000 image with the current background.
+
+Presets, edits, and history are held in memory; refreshing starts with Original.
+
+## Framework
+
+React 19, Vite 8, and Leva. The application runs entirely in the browser.
